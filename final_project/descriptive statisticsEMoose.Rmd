@@ -1,0 +1,654 @@
+---
+title: "DescriptiveStats"
+output: html_document
+date: "2025-04-17"
+---
+
+```{r}
+projectdatabase <- read.csv("C:/Users/emoos/Documents/research project nhanes/clean_data3")
+head(projectdatabase)
+```
+
+```{r}
+#install.packages("tidyverse")
+#install.packages("dplyr")
+#install.packages("modelsummary")
+#install.packages("foreign")
+library(tidyverse)
+library(dplyr)
+library(modelsummary)
+library(foreign)
+#install.packages("dplyr")
+library(dplyr)
+#install.packages("questionr")
+library(questionr)
+```
+
+descriptive statistics (e.g. mean, median, SD) for my continuous variables using the frame code from exercise 5
+```{r}
+projectdatabase%>%
+  drop_na(Age)%>%
+  summarize(mean(Age), sd(Age), count=n())
+```
+
+```{r}
+projectdatabase%>%
+  drop_na(DailySug)%>%
+  filter(DailySug<932)%>%
+  summarize(mean(DailySug), sd(DailySug), count=n())
+```
+```{r}
+projectdatabase%>%
+  drop_na(Months_FoodStamps)%>%
+  filter(Months_FoodStamps<541)%>%
+  summarize(mean(Months_FoodStamps), sd(Months_FoodStamps), count=n())
+```
+```{r}
+projectdatabase%>%
+  drop_na(A1Clevel)%>%
+  filter(A1Clevel<15)%>%
+  summarize(mean(A1Clevel), sd(A1Clevel), count=n())
+```
+```{r}
+#Create a simple frequency count using the table() function. Apply this function to "Race" and "Gender".
+Race_count <- with(projectdatabase, table(Race.with.NH.Asian))
+#turn the above table into propotions with prop.table(mytable)
+prop.table(Race_count)
+#turn the table into percentages using prop.table(mytable)*100
+prop.table(Race_count)*100
+
+Diabetes_YN <- with(projectdatabase, table(Diabetes))
+prop.table(Diabetes_YN)
+prop.table(Diabetes_YN)*100
+
+BMI_cat <- with(projectdatabase, table(BMI_cat))
+prop.table(BMI_cat)
+prop.table(BMI_cat)*100
+
+```
+```{r}
+install.packages("ggplot2")
+install.packages("tidyr")
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+```
+
+Bar charts illustrate variation for nominal and ordinal variables.
+```{r}
+#a. Bar chart for a nominal variable showing raw counts: Create the bar chart for BMI categories (BMIcat)
+#ggplot (data, aes(x=Catvar)) + geom_bar() + labs(title="", x="", y="")
+ggplot (projectdatabase, aes(x=BMI_cat)) + geom_bar(fill = "green") + labs(title="BMI categories", x="BMIcat", y="counts")
+```
+```{r}
+ggplot (projectdatabase, aes(x=Race.with.NH.Asian)) + geom_bar(fill = "green") + labs(title="Race demographics", x="Race", y="counts")
+```
+```{r}
+ggplot (projectdatabase, aes(x=Diabetes)) + geom_bar(fill = "green") + labs(title="Doctor told you have Diabetes", x="Diabetes", y="counts")
+```
+Bar charts by percentages
+```{r}
+BMIcat_table <- with(projectdatabase, table(BMI_cat))
+#turn the above table into proportions: prop.table(new_table_name)
+prop.table(BMIcat_table)
+#turn the table into percentages: prop.table(new_table_name)*100
+#new_data_frame <- as.data.frame(prop.table(new_table_name)*100
+prop.table(BMIcat_table)*100
+BMIcat_barchart <- as.data.frame(prop.table(BMIcat_table)*100)
+ggplot(BMIcat_barchart, aes(BMI_cat, Freq)) + geom_col(fill = "pink")
+```
+Construct bar charts for one ordinal variable in the code chunk below:
+```{r}
+HH_Income_table <- with(projectdatabase, table(HH_Income))
+
+HH_Income_Barchart <- as.data.frame(prop.table(HH_Income_table)*100)
+ggplot(HH_Income_Barchart, aes(HH_Income, Freq)) + geom_col(fill = "orange")
+```
+
+ Constructing bar charts for a nominal/ordinal variable grouped by another nominal/ordinal variable:
+```{r}
+#Diabetes by Race: stacked, grouped and filled bar charts:
+#table(data$Independent variable, data$Dependent variable)
+table(projectdatabase$Diabetes, projectdatabase$BMI_cat)
+#Stacked bar chart:
+#ggplot(data, aes(x=Dependent variable, fill=Independent variable)) + geom_bar(position = "stack") + labs(title="", x="", y="")
+
+ggplot(projectdatabase, aes(x=BMI_cat, fill=Diabetes)) + geom_bar(position ="stack") + facet_wrap(~Race.with.NH.Asian) + labs(title = "stacked bar chart", x="BMI_cat", y="Diabetes")
+ggplot(projectdatabase, aes(x=BMI_cat, fill=Diabetes)) + geom_bar(position ="stack") + facet_grid(~Race.with.NH.Asian) + labs(title = "stacked bar chart", x="Diabetes", y="Race")
+ggplot(projectdatabase, aes(x=BMI_cat, fill=Diabetes)) + geom_bar(position="stack") + labs(title = "", x="Diabetes", y="Race")
+
+#grouped bar chart:
+#ggplot(data, aes(x=Independent variable, fill=dependent variable)) + geom_bar(position = "dodge") + labs(title="", x="Gender", y="Frequency")
+
+ggplot(projectdatabase, aes(x=BMI_cat, fill = Diabetes)) + geom_bar(position = "dodge") + labs(title="grouped bar chart", x="BMIcat", y="Diabetes")
+```
+ 
+ create a new database that removes 999s from A1c levels:
+```{r}
+projectdatabaseA <- projectdatabase%>%
+  filter(A1Clevel<15)
+```
+ 
+ 
+2. Histograms illustrate variation in continuous variables:
+```{r}
+#a. simple histogram: ggplot(data, aes(x=contvar)) + geom_histogram() + labs(title="", x="", y="")
+#construct a histogram for BMI:
+#ggplot(projectdatabase, aes(x=A1Clevel)) + 
+  #geom_histogram() +labs(title="histogram of A1C lvls")
+#b. colored histogram with 20 bins: ggplot(data, aes(x=contvar)) + geom_histogram(bins=20, color="white", fill="steelblue") + labs(title="Colored histogram with 20 bins", x="", y="")
+#do the above code for BMI:
+ggplot(projectdatabaseA, aes(x=A1Clevel)) + geom_histogram(bins=50, color="white", fill="steelblue") + labs(title="histogram with 30 bins", x="A1C lvl", y="count")
+```
+```{r}
+#another histogram, this time for daily sugar intake
+ggplot(projectdatabase, aes(x=DailySug, y=..density..)) + geom_histogram(bins=75, color="white", fill="steelblue") + scale_y_continuous(labels=scales::percent) + labs(title="", y="percent", x="Daily Sug intake in g")
+
+```
+
+```{r}
+projectdatabaseFS <- projectdatabase%>%
+  filter(Months_FoodStamps<13)
+```
+Construct bar charts for one ordinal variable in the code chunk below:
+```{r}
+MonthsFS_Table <- with(projectdatabaseFS, table(Months_FoodStamps))
+
+MonthsFS_Barchart <- as.data.frame(prop.table(MonthsFS_Table)*100)
+ggplot(MonthsFS_Barchart, aes(Months_FoodStamps, Freq)) + geom_col(fill = "blue")
+```
+
+```{r}
+#b. Create a box plot that compares a continuous variable across different levels of a nominal or ordinal variable: Months_FoodStamps by Race:
+ggplot(projectdatabaseFS, aes(x=Race.with.NH.Asian, y=Months_FoodStamps)) + geom_boxplot(fill="olivedrab") + labs(x="Race", y="Months on Food Stamps (measure of consistent food insecurity)", title="")
+ggplot(projectdatabaseFS, aes(x=Race.with.NH.Asian, y=Months_FoodStamps)) + geom_boxplot(fill="pink") + labs(x="Race", y="Months on Food Stamps (measure of consistent food insecurity)", title="Welfare/Food Security dependency  compared across racial categories")
+```
+```{r}
+#install.packages("ggplot2")
+library(ggplot2)
+#install.packages("dunn.test")
+library(dunn.test)
+```
+T test or ANOVA for proving significance across a continuous variable grouped by nominal
+
+Testing for significant differences in a continuous variable across three or more categorical levels. Both S&B and Kabacoff introduce you to analysis of variance (ANOVA) as the statistical method to make these comparisons. What they show you is all good. However, I would like to introduce you to a non-parametric test that is more appropriate to the NHANES data as it applies to variables that are not normally distributed. This method is similar to ANOVA, it is easy to implement, and it provides results that are easy to interpret. 
+
+The non-parametric statistical test that is a substitute for ANOVA is called the Kruskal-Wallis test. It shows if there is a significant difference in the means and variance of a continuous variable across three or more categorical levels when the continuous variable is not normally distributed. After the Kruskal-Wallis test, a post-hoc test called the Dunn Test, identifies the specific bivariate comparisons that significantly differ from each other.
+
+Here is an example:
+```{r}
+#4a. Does long term food stamp use differ by Racial categories? What is the null hypothesis? What is the alternative hypothesis?
+
+#1. Generate summary statistics
+
+projectdatabaseFS%>%
+  drop_na(Months_FoodStamps)%>%
+  group_by(Race.with.NH.Asian)%>%
+  summarize(mean(Months_FoodStamps), sd(Months_FoodStamps), count=n())
+
+#2. Generate a boxplot 
+ggplot(projectdatabaseFS, aes(x=Race.with.NH.Asian, y=Months_FoodStamps)) + geom_boxplot(fill="violetred3") + labs(x="Race", y="Months on Food Stamps", title="Months on Food Stamps by Race")
+
+#3. Run the Kruskal-Wallis test and the post-hoc Dunn test to see if there are any significant differences. The code for the Kruskal-Wallis and Dunn test is: 
+#dunn.test(x=data$contvar, g=data$catvar, kw=TRUE)
+dunn.test(x=projectdatabaseFS$Months_FoodStamps, g=projectdatabaseFS$Race.with.NH.Asian, kw=TRUE)
+
+```
+
+```{r}
+projectdatabase%>%
+  summary(DailySug)
+```
+
+```{r}
+#b. Create a box plot that compares a continuous variable across different levels of a nominal or ordinal variable: DailySug by HHIncome:
+ggplot(projectdatabase, aes(x=HH_Income, y=DailySug)) + geom_boxplot(fill="olivedrab") + labs(x="HHIncome", y="Daily Sugar intake in grams", title="")
+ggplot(projectdatabase, aes(x=HH_Income, y=DailySug)) + geom_boxplot(fill="pink") + labs(x="HHIncome", y="Daily Sugar by grams", title="Sugar consumption compared across Income levels")
+```
+
+
+```{r}
+summary(projectdatabase$DailySug)
+#My IQR (upper quart - lower quart) is 76.75
+1.5*76.75
+58.13-115.125
+134.88+115.125
+
+ggplot(projectdatabase, aes(x=HH_Income, y=DailySug)) + geom_boxplot(fill="olivedrab") + labs(x="HHIncome", y="Daily Sugar intake in grams", title="")
+ggplot(projectdatabase, aes(x=HH_Income, y=DailySug)) + geom_boxplot(fill="pink") + labs(x="HHIncome", y="Daily Sugar by grams", title="Sugar consumption compared across Income levels")
+
+#filter to exclude extreme outliers
+projectdatabase%>%
+  filter(DailySug<250.005)%>%
+  ggplot(aes(x=HH_Income, y=DailySug)) + geom_boxplot(fill="pink") + labs(x="HHIncome", y="Daily Sugar by grams", title="Sugar consumption compared across Income levels, extreme outliers filtered")
+  
+```
+```{r}
+#3a. What are the means, standard deviations, and counts for A1C by Race?
+projectdatabase%>%
+  drop_na(A1Clevel)%>%
+  group_by(Race.with.NH.Asian)%>%
+  summarize(mean(A1Clevel), sd(A1Clevel), count=n())
+#3a. What are the means, standard deviations, and counts for A1C by BMIcat?
+projectdatabase%>%
+  drop_na(A1Clevel)%>%
+  group_by(BMI_cat)%>%
+  summarize(mean(A1Clevel), sd(A1Clevel), count=n())
+
+#Let's hypothesize that there is a significant difference in BMI by gender in the NHANES 2017-2018 sample. What is the null hypothesis? What is the alternative hypothesis? We will test this hypothesis using the method shown in S&B, section 7.1.2
+#1. histogram of continuous variable: 
+hist(projectdatabaseA$A1Clevel)
+
+#4a. Does A1C level differ by BMI categories? What is the null hypothesis? What is the alternative hypothesis?
+#1. Generate summary statistics
+
+projectdatabaseA%>%
+  drop_na(A1Clevel)%>%
+  group_by(BMI_cat)%>%
+  summarize(mean(A1Clevel), sd(A1Clevel), count=n())
+
+#2. Generate a boxplot 
+ggplot(projectdatabaseA, aes(x=BMI_cat, y=A1Clevel)) + geom_boxplot(fill="peru") + labs(x="BMI_cat", y="A1C levels", title="A1C levels by BMI category")
+
+#3. Run the Kruskal-Wallis test and the post-hoc Dunn test to see if there are any significant differences. The code for the Kruskal-Wallis and Dunn test is: 
+#dunn.test(x=data$contvar, g=data$catvar, kw=TRUE)
+dunn.test(x=projectdatabaseA$A1Clevel, g=projectdatabaseA$BMI_cat, kw=TRUE)
+```
+Question: Does the above T-test support the null hypothesis or the alternative hypothesis?
+
+------------
+Let's examine the relationship between BMI categories and household income:
+```{r}
+#a. Generate a two-way frequency table of BMIcat and Diabetes:
+#table_name <- xtabs(~ CatVar1 + CatVar2, data=)
+#print the table
+#show the table in percentages: prop.table(table_name)*100
+
+table_BMIcat_Diabetes <- xtabs(~ BMI_cat + Diabetes, data=projectdatabase)
+print(table_BMIcat_Diabetes)
+
+prop.table(table_BMIcat_Diabetes)*100
+
+#b. run the chi-square test:
+#chisq.test(table_name)
+chisq.test(table_BMIcat_Diabetes)
+```
+the P value from the Chi Squared test is <0.05, ensuring that our two categorical variables have significant differences between two categorical variables
+
+```{r}
+#a. Generate a two-way frequency table of BMIcat and Diabetes:
+#table_name <- xtabs(~ CatVar1 + CatVar2, data=)
+#print the table
+#show the table in percentages: prop.table(table_name)*100
+table_Race_Diabetes <- xtabs(~  + Diabetes, data=projectdatabase)
+print(table_Race_Diabetes)
+
+prop.table(table_Race_Diabetes)*100
+
+#b. run the chi-square test:
+#chisq.test(table_name)
+chisq.test(table_Race_Diabetes)
+```
+the P value from the Chi Squared test is <0.05, pointing to our two categorical variables having significant differences between two categorical variables
+
+NOW, CORRELATIONS BETWEEN CONTINUOUS VARIABLES
+```{r}
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+table(projectdatabase$Diabetes)
+```
+```{r}
+projectdatabase <- projectdatabase %>%
+  mutate(A1Clevel = ifelse(A1Clevel %in% c(777, 999), NA, A1Clevel))
+```
+
+3. Some of the continuous variables contain cells that code for "don't know" or "refused" (e.g, 7777s and 9999s). The code chunk below removes these cells.
+```{r}
+projectdatabase_reduced <- projectdatabase%>%
+  filter(DailySug<932)
+table(projectdatabase_reduced$Diabetes)
+
+projectdatabase_reduced2 <- projectdatabase_reduced%>%
+  filter(Months_FoodStamps<13)
+table(projectdatabase_reduced$Diabetes)
+
+projectdatabase_reduced3 <- projectdatabase_reduced%>%
+  filter(A1Clevel<15)
+table(projectdatabase_reduced$Diabetes)
+
+projectdatabase_reduced4 <- projectdatabase_reduced%>%
+  filter(Age<80)
+table(projectdatabase_reduced$Diabetes)
+
+projectdatabase_reduced4 <- projectdatabase_reduced%>%
+  drop_na(A1Clevel)
+
+head(projectdatabase_reduced)
+#Months_FoodStamps<13, A1Clevel<15, Age<80
+```
+
+
+Create a scatterplot of Daily Sugar consumption and A1C levels and generate a Pearson correlation between these two variables:
+a. What is the null hypothesis?
+b. What is the alternative hypothesis?
+```{r}
+summary(projectdatabase_reduced)
+```
+```{r}
+summary(projectdatabase_reduced$DailySug)
+summary(projectdatabase_reduced$A1Clevel)
+```
+
+```{r}
+#scatter plot code: 
+ggplot(aes(x=A1Clevel, y=DailySug), data=projectdatabase_reduced) + geom_point(color="grey1") + geom_smooth(method=lm, color="green4") + labs(x="", y="") + theme_bw()
+projectdatabase_reduced%>%
+  filter(DailySug<932)%>%
+  drop_na(A1Clevel)%>%
+  ggplot(.,aes(x=DailySug,y=A1Clevel)) + geom_point(color=3) + geom_smooth(method=lm) +theme_bw()
+#correlation test code: cor.test(data$DepVar, data$IndVar, method="pearson")
+#cor.test(projectdatabase_reduced$DailySug,projectdatabase_reduced$A1Clevel,method = 'pearson')
+```
+for ABOVE, p<0.05 so possible significance
+
+Create a scatterplot of Age and A1C levels and generate a Pearson correlation between these two variables:
+a. What is the null hypothesis?
+b. What is the alternative hypothesis?
+```{r}
+#scatter plot code: #ggplot(aes(x=DepVar, y=IndVar), data=) + geom_point(color="") + geom_smooth(method=lm, color="") + labs(x="", y="") + theme_bw()
+projectdatabase_reduced%>%
+  filter(Age<80)%>%
+  ggplot(.,aes(x=Age,y=A1Clevel)) + geom_point(color=3) + geom_smooth(method=lm) +theme_bw()
+#correlation test code: cor.test(data$DepVar, data$IndVar, method="pearson")
+cor.test(projectdatabase_reduced$Age,projectdatabase_reduced$A1Clevel,method = 'pearson')
+```
+for ABOVE, p>0.05 so not significant -- Age and A1C is not significantly correlated
+^this is good for me, because this may mean I will not have to seriously account for differences in my conclusions due to the variation of age in these data sets
+---------------
+Generate a linear regression model that predicts A1C (dependent variable) from Daily Sugar intake (independent variable).
+```{r}
+lm_A1CDS <- lm(A1Clevel~DailySug, data=projectdatabase_reduced)
+summary(lm_A1CDS)
+```
+p<0.05
+
+What is the regression equation for this model?
+
+(y)=7.29+DS(0.004)
+
+What is the multiple R-squared value for this equation?
+r2=0.046
+
+What is the p-value?
+p-value= 0.035
+
+Generate a linear regression model that predicts A1C (dependent variable) from Daily Sugar intake (independent variable).
+```{r}
+lm_FSDS <- lm(Months_FoodStamps~DailySug, data=projectdatabase_reduced)
+summary(lm_FSDS)
+```
+p value non significant
+
+What is the regression equation for this model?
+
+(y)=9.85+DS(0.003)
+
+What is the multiple R-squared value for this equation?
+r2=-0.001
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(dunn.test)
+```
+
+Complete an ANOVA of Age by BMIcat. 1.) show summary statistics, 2.) run the ANOVA, and  3.) graph the mean differences in age by BMIcat.
+```{r}
+#1. find summary statistics of sample sizes, means, standard deviations, and 95% confidence intervals
+plotdata<- projectdatabase%>%
+  drop_na(BMI_cat)%>%
+  filter(Age<80)%>%
+  group_by(BMI_cat)%>%
+  summarize (n=n(),
+             mean = mean(Age),
+             sd=sd(Age),
+             ci=qt(0.975, df=n-1)*sd/sqrt(n))
+plotdata
+#2. test for group differences (ANOVA)
+fit <- aov(Age~BMI_cat, data=projectdatabase)
+summary(fit)
+#3. Plot group means and confidence intervals to visualize these group differences.
+library(ggplot2)
+ggplot(plotdata, aes(x=BMI_cat, y=mean, group = 1)) +
+  geom_point(size=1, color="lightgoldenrod2") +
+             geom_errorbar(aes(ymin=mean-ci,
+                               ymax=mean+ci),
+                           width=.1) +
+               theme_bw() +
+               labs(x="BMI category",
+                    y="Age in years",
+                    title = "BMI category and Age with 95% CI")
+```
+the F value is large/far from zero, making it possible the variance is related to the correlation between age and bmicat
+
+[Complete this step only if there is a significant F-value in the ANOVA.] Run the post-hoc test to find out which pairwise comparisons significantly differ from each other. The pairwise comparisons that differ from each other are the ones that are driving the significant test result in the ANOVA. We will use the Tukey post hoc test. Bear in mind, that there are many post hoc tests to use.
+```{r}
+#1. calculates pairwise comparisons as a Tukey post hoc test
+pairwise <- TukeyHSD(fit)
+pairwise
+#2. create a data set of the above results
+plotdata <- as.data.frame(pairwise[[1]])
+plotdata$conditions <- row.names(BMI_cat_Age_plot)
+#3. Plot the results
+ggplot(data=plotdata, aes(x=conditions, y=diff)) +
+  geom_point(size=2, color="mediumorchid3") +
+  geom_errorbar(aes(ymin=lwr, ymax=upr, width=.2)) +
+  geom_hline(yintercept=0, color="mediumorchid3", linetype="dashed") +
+  labs(y="Differences in mean levels", x="",
+       title="95% family-wise confidence levels") +
+  theme_bw() +
+  coord_flip()
+```
+p value is zero for all except >0.05 for Overweight-Obese -- while this might be an error, there was a significant F value in the ANOVA so I ran this as structured
+
+Complete an ANOVA of A1C levels by Diabetes 1.) show summary statistics, 2.) run the ANOVA, and  3.) graph the mean differences in age by BMIcat.
+```{r}
+rm(Diabetes_A1C_plot)
+```
+
+```{r}
+projectdatabase_reduced$Diabetes <- as.factor(projectdatabase_reduced$Diabetes)
+```
+
+```{r}
+levels(projectdatabase_reduced$Diabetes)
+```
+```{r}
+table(projectdatabase_reduced$Diabetes)
+```
+```{r}
+projectdatabase_reduced <- projectdatabase_reduced %>%
+  filter(Diabetes != "don'tknow")
+
+projectdatabase_reduced$Diabetes <- droplevels(projectdatabase_reduced$Diabetes)
+```
+
+```{r}
+table(projectdatabase_reduced$Diabetes)
+```
+```{r}
+table(projectdatabase_reduced$Diabetes, projectdatabase_reduced$A1Clevel)
+```
+
+```{r}
+projectdatabase_reduced%>%
+  drop_na(A1Clevel)%>%
+  group_by(Diabetes)%>%
+  summarize(mean(A1Clevel), sd(A1Clevel), count=n())
+```
+I was attempting to run a kruskall-wallis test to analyze the variance between A1C levels and Diabetes ranges, and it was not working, so after checking it turns out A1C was only recorded for the SEQs who responded "yes" for the Diabetes status question
+
+Calculate the odds ratio of having Diabetes (dependent variable) by race (independent variable)
+```{r}
+projectdatabase_reduced$Diabetes_binary <- ifelse(projectdatabase_reduced$Diabetes == "Yes", "Yes", "No")
+```
+
+```{r}
+#install.packages("epitools")
+library(epitools)
+#install.packages("ggmosaic")
+library(ggmosaic)
+#1. Create the odds table:
+#odds_table_name <- table(data$IndVar, data$DepVar)
+odds_table_DiabetesRace <- table(projectdatabase_reduced$Race.with.NH.Asian, projectdatabase_reduced$Diabetes)
+
+#2. Run the oddsratio on the table you created:
+oddsratio(odds_table_DiabetesRace)
+```
+
+```{r}
+#3. Graph the results in a mosaic table:
+
+#ggplot(data=NHANESdata_reduced) + geom_mosaic(aes(x=product(Race), fill=(HealthInsYN)), na.rm=TRUE, show.legend=FALSE) + labs(title="health ins by race", x="Race cat", y="Health Ins")
+
+ggplot(data=projectdatabase_reduced) + 
+  geom_mosaic(aes(x=product(Race.with.NH.Asian), fill=Diabetes), 
+              na.rm = TRUE, show.legend = FALSE) + 
+  labs(title = "Diabetes by race", x="Race", y="Diabetes")
+```
+now for mod exerc and race
+```{r}
+odds_table_ModexercRace <- table(projectdatabase_reduced$Race.with.NH.Asian, projectdatabase_reduced$MinsModerate)
+odds_table_ModexercRace
+```
+```{r}
+library(dplyr)
+
+clean_data <- projectdatabase_reduced %>%
+  filter(!is.na(Race.with.NH.Asian), !is.na(MinsModerate))
+```
+
+```{r}
+table(clean_data$Race.with.NH.Asian, clean_data$MinsModerate)
+```
+
+
+```{r}
+library(dplyr)
+
+# 1. Remove rows with NA in either variable
+clean_data <- projectdatabase_reduced %>%
+  filter(!is.na(Race.with.NH.Asian), !is.na(MinsModerate))
+
+# 2. Create the contingency table
+odds_table <- table(clean_data$Race.with.NH.Asian, clean_data$MinsModerate)
+
+# 3. Filter out rows or columns with total counts ≤ 1
+odds_table_filtered <- odds_table[
+  rowSums(odds_table) > 1,
+  colSums(odds_table) > 1
+]
+
+# 4. Run the odds ratio function
+library(epitools)
+oddsratio(odds_table_filtered)
+```
+```{r}
+ggplot(data=projectdatabase_reduced) + 
+  geom_mosaic(aes(x=product(Race.with.NH.Asian), fill=MinsModerate), 
+              na.rm = TRUE, show.legend = FALSE) + 
+  labs(title = "Moderate exercise by race", x="Race", y="MinsModerate")
+```
+
+```{r}
+summary(projectdatabase_reduced)
+```
+```{r}
+str(projectdatabase_reduced$Months_FoodStamps)
+```
+
+
+```{r}
+# Step 1: Filter and clean data
+data <- projectdatabase_reduced %>%
+  filter(Months_FoodStamps < 13) %>%
+  filter(HH_Income < 16) %>%
+  drop_na(Months_FoodStamps) %>%
+  drop_na(HH_Income)
+
+# Step 2: Run Spearman correlation
+cor.test(as.numeric(data$Months_FoodStamps), as.numeric(data$HH_Income), method = "spearman", alternative = "two.sided")
+```
+since spearman is rank based, R approximates the p-val instead of providing the exact one. This doesn't invalidate the test but it means  the result might be less precise
+```{r}
+rm(projectdatabase_reduced_1)
+rm(projectdatabase_reduced2)
+rm(projectdatabase_reduced3)
+```
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(epitools)
+library(ggmosaic)
+```
+
+```{r}
+library(dplyr)
+projectdatabase_reduced5 <- projectdatabase%>%
+  mutate("HH_Income" = factor(`HH_Income`,
+                         levels = c(1,2,3,4,5,6,7,8,9,10,14,15), labels = c("low","low","low","low","low","low","middle","middle","middle","middle","high","high")))
+
+
+```
+
+```{r}
+projectdatabase_reduced5_clean <- subset(projectdatabase_reduced5, Diabetes != "don't know")
+
+# Make sure HH_Income is a factor with levels "low", "middle", "high"
+projectdatabase_reduced5_clean$HH_Income <- factor(projectdatabase_reduced5_clean$HH_Income,
+                                                   levels = c("low", "middle", "high"))
+
+# Make sure Diabetes is a factor with levels "yes", "no", "borderline"
+projectdatabase_reduced5_clean$Diabetes <- factor(projectdatabase_reduced5_clean$Diabetes,
+                                                  levels = c("Yes", "No", "Borderline"))
+
+projectdatabase_reduced5_clean <- projectdatabase_reduced5_clean %>%
+  filter(!is.na(HH_Income), !is.na(Diabetes))
+
+drop_na(projectdatabase_reduced5_clean)
+
+# Create the contingency table
+table_HH_Diabetes <- table(projectdatabase_reduced5_clean$HH_Income, projectdatabase_reduced5_clean$Diabetes)
+
+library(epitools)
+
+# Calculate odds ratio using NEW I FOUND THIS ONLINE, MULTINOMIAL CALC
+install.packages(nnet)
+library(nnet)
+
+# Multinomial logistic regression
+model_multinom <- multinom(Diabetes ~ HH_Income, data = projectdatabase_reduced5_clean)
+
+# View summary
+summary(model_multinom)
+
+```
+```{r}
+library(ggmosaic)
+
+ggplot(data = projectdatabase_reduced5_clean) + 
+  geom_mosaic(aes(x = product(Diabetes), fill = HH_Income), 
+              na.rm = TRUE) +
+  labs(title = "Diabetes by Income Level",
+       x = "Diabetes Status",
+       y = "Income Level") +
+  theme_minimal() 
+```
+
